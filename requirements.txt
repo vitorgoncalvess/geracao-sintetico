@@ -1,0 +1,5 @@
+sqlalchemy
+pymysql
+flask
+flask-cors
+flask-socketio
