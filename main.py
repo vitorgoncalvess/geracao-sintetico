@@ -20,7 +20,7 @@ sensors = []
 last_data = {}
 data_influencers = []
 
-def gen_data():
+def populate_data():
     global sensors
     global last_data
     if not sensors:
@@ -31,11 +31,16 @@ def gen_data():
         if not res:
             last_data = {
                 1: 36,
-                4: 120,
+                2: 120,
                 3: 120,
             }
         else:
             last_data = reduce(lambda acc, report: {**acc, report.sensor_id: float(report.data)}, res, last_data)
+    
+def gen_data():
+    global sensors
+    global last_data
+    populate_data()
     return_data = []
     for sensor in sensors:
         rep = last_data.get(sensor["id"])
@@ -56,19 +61,16 @@ def gen_data():
         last_data[str(sensor["id"])] = data_to_insert
         time = datetime.now()
         sensor_data = Report(data=data_to_insert, date=time, sensor_id=sensor["id"])
-        db.add(sensor_data)
-        db.commit()
+        # db.add(sensor_data)
         return_data.append({
             "id": sensor_data.id,
+            "name": sensor["name"],
             "data": sensor_data.data,
             "date": sensor_data.date,
             "sensor_id": sensor_data.sensor_id
         })
     return return_data
         
-        
-        
-
 class Gen(Thread):
     def __init__(self):
         Thread.__init__(self)
@@ -82,6 +84,10 @@ class Gen(Thread):
 
 gen = Gen()
 gen.start()
+
+@socketio.on("alert")
+def teste(alert):
+    print(alert)
 
 if __name__ == '__main__':
     app.run()

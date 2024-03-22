@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 engine = create_engine(
-    "mysql+pymysql://root:password@localhost:3306/sensors"
+    "mysql+pymysql://root:password@localhost:3306/main_sensor"
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
