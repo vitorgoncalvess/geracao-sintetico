@@ -1,4 +1,5 @@
 from time import sleep
+from turtle import up
 from flask import Flask, json
 from flask_cors import CORS
 from threading import Thread
@@ -37,6 +38,16 @@ def populate_data():
         else:
             last_data = reduce(lambda acc, report: {**acc, report.sensor_id: float(report.data)}, res, last_data)
     
+def get_offset(act, median):
+    up_chance = 0.5
+    half_max = median + median / 2
+    half_min = median - median / 2
+    if act > half_max:
+        up_chance = 0.1
+    elif act < half_min:
+        up_chance = 0.7
+    return up_chance
+    
 def gen_data():
     global sensors
     global last_data
@@ -44,17 +55,11 @@ def gen_data():
     return_data = []
     for sensor in sensors:
         rep = last_data.get(sensor["id"])
-        up_chance = 0.5
         median = (sensor["max"] + sensor["min"]) / 2
-        half_max = median + median / 2
-        half_min = median - median / 2
-        if rep > half_max:
-            up_chance = 0.1
-        elif rep < half_min:
-            up_chance = 0.7
+        offset = get_offset(rep, median)
         ind = random()
         data = float(sensor["offset"]) * random() 
-        if ind < up_chance:
+        if ind < offset:
             data_to_insert = rep + data
         else:
             data_to_insert = rep - data
@@ -86,8 +91,9 @@ gen = Gen()
 gen.start()
 
 @socketio.on("alert")
-def teste(alert):
-    print(alert)
+def get_alert(alert):
+    data_influencers.append(alert)
+    print(data_influencers)
 
 if __name__ == '__main__':
     app.run()
