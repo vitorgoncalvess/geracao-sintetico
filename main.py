@@ -18,7 +18,7 @@ db = get_db()
 
 sensors = []
 last_data = {}
-data_influencers = []
+data_influencers = [True]
 
 def populate_data():
     global sensors
@@ -89,7 +89,7 @@ gen = Gen()
 gen.start()
 
 @socketio.on("alert")
-def teste(alert):
+def get_alert(alert):
     data_influencers.append(alert)
 
 if __name__ == '__main__':
