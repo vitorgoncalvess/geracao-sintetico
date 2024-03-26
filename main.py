@@ -37,6 +37,14 @@ def populate_data():
         else:
             last_data = reduce(lambda acc, report: {**acc, report.sensor_id: float(report.data)}, res, last_data)
     
+def get_offset(rep, min, max):
+    if len(data_influencers) > 0:
+        for data in data_influencers:
+            # trigger_time = datetime.fromisoformat(data["triggered_at"])
+            if data["type"] == "GUN_SOUND":
+                min += min
+    return (rep - float(max)) / float(min - max)
+
 def gen_data():
     global sensors
     global last_data
@@ -44,21 +52,16 @@ def gen_data():
     return_data = []
     for sensor in sensors:
         rep = last_data.get(sensor["id"])
-        up_chance = 0.5
-        median = (sensor["max"] + sensor["min"]) / 2
-        half_max = median + median / 2
-        half_min = median - median / 2
-        if rep > half_max:
-            up_chance = 0.1
-        elif rep < half_min:
-            up_chance = 0.7
+        (max, min) = (sensor["max"], sensor["min"])
+        index = get_offset(rep, min, max)
+        print(index, sensor["name"])
         ind = random()
         data = float(sensor["offset"]) * random() 
-        if ind < up_chance:
+        if ind < index:
             data_to_insert = rep + data
         else:
             data_to_insert = rep - data
-        last_data[str(sensor["id"])] = data_to_insert
+        last_data[sensor["id"]] = data_to_insert
         time = datetime.now()
         sensor_data = Report(data=data_to_insert, date=time, sensor_id=sensor["id"])
         # db.add(sensor_data)
@@ -87,7 +90,7 @@ gen.start()
 
 @socketio.on("alert")
 def teste(alert):
-    print(alert)
+    data_influencers.append(alert)
 
 if __name__ == '__main__':
     app.run()
