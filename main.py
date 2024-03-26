@@ -1,5 +1,4 @@
 from time import sleep
-from turtle import up
 from flask import Flask, json
 from flask_cors import CORS
 from threading import Thread
@@ -19,7 +18,7 @@ db = get_db()
 
 sensors = []
 last_data = {}
-data_influencers = []
+data_influencers = [True]
 
 def populate_data():
     global sensors
@@ -63,7 +62,7 @@ def gen_data():
             data_to_insert = rep + data
         else:
             data_to_insert = rep - data
-        last_data[str(sensor["id"])] = data_to_insert
+        last_data[sensor["id"]] = data_to_insert
         time = datetime.now()
         sensor_data = Report(data=data_to_insert, date=time, sensor_id=sensor["id"])
         # db.add(sensor_data)
@@ -93,7 +92,6 @@ gen.start()
 @socketio.on("alert")
 def get_alert(alert):
     data_influencers.append(alert)
-    print(data_influencers)
 
 if __name__ == '__main__':
     app.run()
