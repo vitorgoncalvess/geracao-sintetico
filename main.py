@@ -18,7 +18,8 @@ db = get_db()
 
 sensors = []
 last_data = {}
-data_influencers = [True]
+data_influencers = []
+
 
 def populate_data():
     global sensors
@@ -31,12 +32,13 @@ def populate_data():
         if not res:
             last_data = {
                 1: 36,
-                2: 120,
-                3: 120,
+                2: 170,
+                3: 170,
             }
         else:
             last_data = reduce(lambda acc, report: {**acc, report.sensor_id: float(report.data)}, res, last_data)
-    
+
+
 def get_offset(rep, min, max):
     if len(data_influencers) > 0:
         for data in data_influencers:
@@ -44,6 +46,7 @@ def get_offset(rep, min, max):
             if data["type"] == "GUN_SOUND":
                 min += min
     return (rep - float(max)) / float(min - max)
+
 
 def gen_data():
     global sensors
@@ -54,9 +57,8 @@ def gen_data():
         rep = last_data.get(sensor["id"])
         (max, min) = (sensor["max"], sensor["min"])
         index = get_offset(rep, min, max)
-        print(index, sensor["name"])
         ind = random()
-        data = float(sensor["offset"]) * random() 
+        data = float(sensor["offset"]) * random()
         if ind < index:
             data_to_insert = rep + data
         else:
@@ -64,7 +66,8 @@ def gen_data():
         last_data[sensor["id"]] = data_to_insert
         time = datetime.now()
         sensor_data = Report(data=data_to_insert, date=time, sensor_id=sensor["id"])
-        # db.add(sensor_data)
+        db.add(sensor_data)
+        db.commit()
         return_data.append({
             "id": sensor_data.id,
             "name": sensor["name"],
@@ -73,25 +76,29 @@ def gen_data():
             "sensor_id": sensor_data.sensor_id
         })
     return return_data
-        
+
+
 class Gen(Thread):
     def __init__(self):
         Thread.__init__(self)
-        
+
     def run(self):
         while True:
             # função de gerar dados e salvar aqui
             res = gen_data()
-            socketio.emit("data", json.dumps(res)) #retorno da funcao, o retorno pode ser os dados gerados: {"temperatura": 32, "humildade": 5}
+            # retorno da funcao, o retorno pode ser os dados gerados: {"temperatura": 32, "humildade": 5}
+            socketio.emit("data", json.dumps(res))
             sleep(1)
+
 
 gen = Gen()
 gen.start()
+
 
 @socketio.on("alert")
 def get_alert(alert):
     data_influencers.append(alert)
 
+
 if __name__ == '__main__':
     app.run()
-
